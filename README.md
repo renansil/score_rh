@@ -68,3 +68,64 @@ candidatos_df = pd.read_sql_query(query, conn)
  4. **Experiência Técnica** - Se o candidato tem 5 anos ou mais de experiência em sua área de atuação, ele recebe 20 pontos. Isso valoriza a experiência técnica.
 
  4. **Cargos não relacionados** - Se o candidato tem mais 1 candidatura que seja em um departamento diferente, ele não pontua, recebe 5 pontos se tiver candidaturas para o mesmo departamento com vagas diferentes.
+
+``` python
+def calcular_score(row, salario_minimo, salario_maximo):
+    score = 0
+
+    if row['estado'] == 'Estado alvo':
+        score += 20
+
+    if salario_minimo + 100 <= row['pretensao_salarial'] <= salario_maximo - 100:
+        score += 30
+    elif salario_minimo <= row['pretensao_salarial'] <= salario_maximo:
+        score += 15
+
+    if row['fit_cultural'] == 1:
+        score += 30
+
+    if row['tempo_exp_em_anos'] >= 5:
+        score += 20
+
+    if row['candidaturas'] == 1:
+        score += 5
+
+    return min(score, 100)
+```
+### *Calcular o Score para Cada Candidato*  
+
+Aplicação do Score: Aplicação da função `calcular_scores` onde ela aplica `calcular_score` a cada linha da base de dados, adicionando uma nova coluna chamada score.
+
+
+``` python
+def calcular_scores(df, salario_minimo, salario_maximo):
+    df['score'] = df.apply(lambda x: calcular_score(x, salario_minimo, salario_maximo), axis=1)
+    return df
+```
+### *Salvar os Resultados em um Arquivo CSV*
+
+Passando a função `salvar_resultados` para criação da exportação dos resultados para um arquivo CSV.
+* Configurações Iniciais:
+Passando o valor Min/Max de sálario retirei esses valores da base de dados usando a função min/max das colunas `salario_maximo` e `salario_minimo`.
+
+1. Minimo = R$ 1214
+
+2. Máximo = R$ 13389
+
+Seguindo as configurações salvei os resultados em um CSV.
+```python
+def salvar_resultados(df, filename):
+    df.to_csv(filename, index=False)
+
+salario_minimo = 1214
+salario_maximo = 13389
+
+resultados_df = calcular_scores(candidato, salario_minimo, salario_maximo)
+
+salvar_resultados(resultados_df, 'resultados_candidatos.csv')
+```
+# **Resultado**
+```python
+resultados_df = pd.read_csv('resultados_candidatos.csv')
+
+resultados_df
